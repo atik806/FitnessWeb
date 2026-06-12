@@ -81,7 +81,7 @@ export default function ProfilePage() {
         )
         loadProfile(id)
       }
-    })
+    }).catch(() => {})
   }, [loadProfile])
 
   useEffect(() => {

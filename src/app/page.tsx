@@ -38,7 +38,7 @@ export default function Home() {
         <div className="flex items-center gap-2 sm:gap-3">
           <Link
             href="/auth/login"
-            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap"
+            className="inline-flex h-9 items-center justify-center rounded-lg border border-border px-3 sm:px-4 text-sm font-semibold text-foreground shadow-sm transition-all hover:bg-accent whitespace-nowrap"
           >
             Log in
           </Link>

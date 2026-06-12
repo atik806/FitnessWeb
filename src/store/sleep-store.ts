@@ -29,23 +29,20 @@ export const useSleepStore = create<SleepState>((set) => ({
     }
   },
   async addRecord(userId, record) {
-    try {
-      const supabase = createClient()
-      const { data } = await supabase
-        .from("sleep_record")
-        .insert({ user_id: userId, ...record })
-        .select()
-        .single()
-      if (data) {
-        set((state) => ({ records: [data as SleepRecord, ...state.records] }))
-      }
-    } catch {}
+    const supabase = createClient()
+    const { data, error } = await supabase
+      .from("sleep_record")
+      .insert({ user_id: userId, ...record })
+      .select()
+      .single()
+    if (error) throw error
+    if (data) {
+      set((state) => ({ records: [data as SleepRecord, ...state.records] }))
+    }
   },
   async deleteRecord(id) {
-    try {
-      const supabase = createClient()
-      await supabase.from("sleep_record").delete().eq("id", id)
-      set((state) => ({ records: state.records.filter((r) => r.id !== id) }))
-    } catch {}
+    const supabase = createClient()
+    await supabase.from("sleep_record").delete().eq("id", id)
+    set((state) => ({ records: state.records.filter((r) => r.id !== id) }))
   },
 }))

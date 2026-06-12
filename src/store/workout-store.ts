@@ -29,23 +29,20 @@ export const useWorkoutStore = create<WorkoutState>((set) => ({
     }
   },
   async addWorkout(userId, workout) {
-    try {
-      const supabase = createClient()
-      const { data } = await supabase
-        .from("workout_entry")
-        .insert({ user_id: userId, ...workout })
-        .select()
-        .single()
-      if (data) {
-        set((state) => ({ workouts: [data as WorkoutEntry, ...state.workouts] }))
-      }
-    } catch {}
+    const supabase = createClient()
+    const { data, error } = await supabase
+      .from("workout_entry")
+      .insert({ user_id: userId, ...workout })
+      .select()
+      .single()
+    if (error) throw error
+    if (data) {
+      set((state) => ({ workouts: [data as WorkoutEntry, ...state.workouts] }))
+    }
   },
   async deleteWorkout(id) {
-    try {
-      const supabase = createClient()
-      await supabase.from("workout_entry").delete().eq("id", id)
-      set((state) => ({ workouts: state.workouts.filter((w) => w.id !== id) }))
-    } catch {}
+    const supabase = createClient()
+    await supabase.from("workout_entry").delete().eq("id", id)
+    set((state) => ({ workouts: state.workouts.filter((w) => w.id !== id) }))
   },
 }))

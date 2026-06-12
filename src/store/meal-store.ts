@@ -30,23 +30,20 @@ export const useMealStore = create<MealState>((set) => ({
     }
   },
   async addMeal(userId, meal) {
-    try {
-      const supabase = createClient()
-      const { data } = await supabase
-        .from("meal_entry")
-        .insert({ user_id: userId, ...meal })
-        .select()
-        .single()
-      if (data) {
-        set((state) => ({ meals: [data as MealEntry, ...state.meals] }))
-      }
-    } catch {}
+    const supabase = createClient()
+    const { data, error } = await supabase
+      .from("meal_entry")
+      .insert({ user_id: userId, ...meal })
+      .select()
+      .single()
+    if (error) throw error
+    if (data) {
+      set((state) => ({ meals: [data as MealEntry, ...state.meals] }))
+    }
   },
   async deleteMeal(id) {
-    try {
-      const supabase = createClient()
-      await supabase.from("meal_entry").delete().eq("id", id)
-      set((state) => ({ meals: state.meals.filter((m) => m.id !== id) }))
-    } catch {}
+    const supabase = createClient()
+    await supabase.from("meal_entry").delete().eq("id", id)
+    set((state) => ({ meals: state.meals.filter((m) => m.id !== id) }))
   },
 }))

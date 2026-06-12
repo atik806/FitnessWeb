@@ -30,32 +30,26 @@ export const useGoalsStore = create<GoalsState>((set) => ({
     }
   },
   async addGoal(userId, goal) {
-    try {
-      const supabase = createClient()
-      const { data } = await supabase
-        .from("user_goal")
-        .insert({ user_id: userId, ...goal })
-        .select()
-        .single()
-      if (data) {
-        set((state) => ({ goals: [data as UserGoal, ...state.goals] }))
-      }
-    } catch {}
+    const supabase = createClient()
+    const { data } = await supabase
+      .from("user_goal")
+      .insert({ user_id: userId, ...goal })
+      .select()
+      .single()
+    if (data) {
+      set((state) => ({ goals: [data as UserGoal, ...state.goals] }))
+    }
   },
   async updateGoal(id, data) {
-    try {
-      const supabase = createClient()
-      await supabase.from("user_goal").update(data).eq("id", id)
-      set((state) => ({
-        goals: state.goals.map((g) => (g.id === id ? { ...g, ...data } : g)),
-      }))
-    } catch {}
+    const supabase = createClient()
+    await supabase.from("user_goal").update(data).eq("id", id)
+    set((state) => ({
+      goals: state.goals.map((g) => (g.id === id ? { ...g, ...data } : g)),
+    }))
   },
   async deleteGoal(id) {
-    try {
-      const supabase = createClient()
-      await supabase.from("user_goal").delete().eq("id", id)
-      set((state) => ({ goals: state.goals.filter((g) => g.id !== id) }))
-    } catch {}
+    const supabase = createClient()
+    await supabase.from("user_goal").delete().eq("id", id)
+    set((state) => ({ goals: state.goals.filter((g) => g.id !== id) }))
   },
 }))

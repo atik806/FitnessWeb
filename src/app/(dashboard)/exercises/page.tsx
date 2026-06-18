@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { ExerciseBrowser } from "@/components/exercise/exercise-browser"
+import type { Session } from "@supabase/supabase-js"
 import { Dumbbell, Loader2 } from "lucide-react"
 
 export default function ExercisesPage() {
@@ -10,7 +11,7 @@ export default function ExercisesPage() {
 
   useEffect(() => {
     const supabase = createClient()
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session } }: { data: { session: Session | null } }) => {
       if (session?.user) {
         setUserId(session.user.id)
       }

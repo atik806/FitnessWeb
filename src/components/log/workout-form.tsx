@@ -1,13 +1,17 @@
 "use client"
 
+import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { toast } from "sonner"
 import { useWorkoutStore } from "@/store"
 import { Button } from "@/components/ui/button"
-import { Dumbbell, Footprints, Bike, PersonStanding, Activity } from "lucide-react"
+import { ExerciseSelector } from "@/components/exercise/exercise-selector"
+import { ExerciseAnimation } from "@/components/exercise/exercise-animation"
+import { Dumbbell, Footprints, Bike, PersonStanding, Activity, Plus, X } from "lucide-react"
 import { nowLocal } from "@/lib/utils"
+import type { Exercise } from "@/types/exercise"
 
 const workoutSchema = z.object({
   type: z.enum(["running", "walking", "cycling", "strength", "yoga", "custom"]),
@@ -23,6 +27,13 @@ type WorkoutFormData = z.infer<typeof workoutSchema>
 interface WorkoutFormProps {
   userId: string
   onSuccess: () => void
+}
+
+interface SelectedExercise {
+  exercise: Exercise
+  sets: number
+  reps: number
+  weight: number
 }
 
 const typeOptions = [
@@ -43,6 +54,9 @@ const intensityOptions = [
 
 export function WorkoutForm({ userId, onSuccess }: WorkoutFormProps) {
   const { addWorkout } = useWorkoutStore()
+  const [selectedExercises, setSelectedExercises] = useState<SelectedExercise[]>([])
+  const [selectorOpen, setSelectorOpen] = useState(false)
+
   const {
     register,
     handleSubmit,
@@ -61,6 +75,28 @@ export function WorkoutForm({ userId, onSuccess }: WorkoutFormProps) {
   const selectedType = watch("type")
   const showDistance = ["running", "walking", "cycling"].includes(selectedType)
 
+  const handleSelectExercises = (exercises: Exercise[]) => {
+    const existing = new Map(selectedExercises.map((se) => [se.exercise.id, se]))
+    for (const ex of exercises) {
+      if (!existing.has(ex.id)) {
+        existing.set(ex.id, { exercise: ex, sets: 3, reps: 10, weight: 0 })
+      }
+    }
+    setSelectedExercises(Array.from(existing.values()))
+  }
+
+  const removeExercise = (id: string) => {
+    setSelectedExercises((prev) => prev.filter((se) => se.exercise.id !== id))
+  }
+
+  const updateExerciseMeta = (id: string, field: keyof SelectedExercise, value: number) => {
+    setSelectedExercises((prev) =>
+      prev.map((se) =>
+        se.exercise.id === id ? { ...se, [field]: value } : se,
+      ),
+    )
+  }
+
   const onSubmit = async (data: WorkoutFormData) => {
     try {
       const doneAtISO = new Date(data.done_at).toISOString()
@@ -69,7 +105,12 @@ export function WorkoutForm({ userId, onSuccess }: WorkoutFormProps) {
         duration_min: data.duration_min,
         distance_km: showDistance ? (data.distance_km ?? null) : null,
         intensity: data.intensity ?? null,
-        notes: data.notes ?? null,
+        notes: [
+          ...(data.notes ? [data.notes] : []),
+          ...(selectedExercises.length > 0
+            ? [`Exercises: ${selectedExercises.map((se) => se.exercise.id).join(",")}`]
+            : []),
+        ].join("\n") || null,
         done_at: doneAtISO,
       })
       toast.success("Workout logged!")
@@ -162,6 +203,106 @@ export function WorkoutForm({ userId, onSuccess }: WorkoutFormProps) {
         </select>
       </div>
 
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center justify-between">
+          <label className="text-foreground text-sm font-medium">
+            Exercises
+            <span className="text-muted-foreground ml-1 text-xs">(optional)</span>
+          </label>
+          <button
+            type="button"
+            onClick={() => setSelectorOpen(true)}
+            className="flex items-center gap-1 rounded-lg border border-dashed border-border px-2.5 py-1 text-xs text-muted-foreground hover:border-fitness/50 hover:text-fitness transition-all"
+          >
+            <Plus className="size-3" />
+            Browse Library
+          </button>
+        </div>
+
+        {selectedExercises.length > 0 ? (
+          <div className="flex flex-col gap-2">
+            {selectedExercises.map((se) => (
+              <div
+                key={se.exercise.id}
+                className="flex items-center gap-3 rounded-lg border border-border bg-background p-2.5"
+              >
+                <div className="flex shrink-0 items-center justify-center rounded-lg bg-fitness/5 size-14">
+                  <ExerciseAnimation
+                    exerciseId={se.exercise.id}
+                    size={48}
+                    autoplay={false}
+                    loop
+                    lazy
+                  />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">{se.exercise.name}</p>
+                  <p className="text-muted-foreground text-xs truncate">
+                    {se.exercise.primaryMuscle}
+                  </p>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="flex flex-col items-center">
+                    <span className="text-[10px] text-muted-foreground">Sets</span>
+                    <input
+                      type="number"
+                      min={1}
+                      max={20}
+                      value={se.sets}
+                      onChange={(e) =>
+                        updateExerciseMeta(se.exercise.id, "sets", parseInt(e.target.value) || 1)
+                      }
+                      className="w-12 rounded border border-border bg-background px-1.5 py-0.5 text-center text-xs outline-none focus:border-ring"
+                    />
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <span className="text-[10px] text-muted-foreground">Reps</span>
+                    <input
+                      type="number"
+                      min={1}
+                      max={999}
+                      value={se.reps}
+                      onChange={(e) =>
+                        updateExerciseMeta(se.exercise.id, "reps", parseInt(e.target.value) || 1)
+                      }
+                      className="w-12 rounded border border-border bg-background px-1.5 py-0.5 text-center text-xs outline-none focus:border-ring"
+                    />
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <span className="text-[10px] text-muted-foreground">kg</span>
+                    <input
+                      type="number"
+                      min={0}
+                      step={0.5}
+                      value={se.weight}
+                      onChange={(e) =>
+                        updateExerciseMeta(se.exercise.id, "weight", parseFloat(e.target.value) || 0)
+                      }
+                      className="w-12 rounded border border-border bg-background px-1.5 py-0.5 text-center text-xs outline-none focus:border-ring"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => removeExercise(se.exercise.id)}
+                    className="text-muted-foreground hover:text-destructive ml-1 transition-colors"
+                  >
+                    <X className="size-4" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div
+            onClick={() => setSelectorOpen(true)}
+            className="flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-border py-3 text-xs text-muted-foreground hover:border-fitness/50 hover:text-fitness transition-all"
+          >
+            <Dumbbell className="size-4" />
+            Add exercises from library with animations
+          </div>
+        )}
+      </div>
+
       <div className="flex flex-col gap-1.5">
         <label htmlFor="notes" className="text-foreground text-sm font-medium">
           Notes <span className="text-muted-foreground text-xs">(optional)</span>
@@ -195,6 +336,12 @@ export function WorkoutForm({ userId, onSuccess }: WorkoutFormProps) {
       <Button type="submit" disabled={isSubmitting} className="mt-1 w-full">
         {isSubmitting ? "Saving..." : "Log Workout"}
       </Button>
+
+      <ExerciseSelector
+        open={selectorOpen}
+        onOpenChange={setSelectorOpen}
+        onSelect={handleSelectExercises}
+      />
     </form>
   )
 }

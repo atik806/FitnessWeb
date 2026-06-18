@@ -1,6 +1,5 @@
 "use client"
 
-import { useEffect } from "react"
 import { Dumbbell, Footprints, Bike, PersonStanding, Activity, Loader2 } from "lucide-react"
 import { useWorkoutStore } from "@/store"
 import { timeAgo } from "@/lib/utils"
@@ -23,12 +22,8 @@ const workoutLabels: Record<string, string> = {
   custom: "Workout",
 }
 
-export function RecentWorkouts({ userId }: { userId: string }) {
-  const { workouts, loading, loadWorkouts } = useWorkoutStore()
-
-  useEffect(() => {
-    loadWorkouts(userId)
-  }, [loadWorkouts, userId])
+export function RecentWorkouts({ userId: _ }: { userId: string }) {
+  const { workouts, loading } = useWorkoutStore()
 
 
 

@@ -10,6 +10,7 @@ import {
   BarChart3,
   Target,
   UserCircle,
+  BookOpen,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { ThemeToggle } from "@/components/theme-toggle"
@@ -17,6 +18,7 @@ import { ThemeToggle } from "@/components/theme-toggle"
 const navLinks = [
   { href: "/dashboard", label: "Home", icon: LayoutDashboard },
   { href: "/workouts", label: "Workouts", icon: Dumbbell },
+  { href: "/exercises", label: "Exercises", icon: BookOpen },
   { href: "/nutrition", label: "Food", icon: Apple },
   { href: "/sleep", label: "Sleep", icon: Moon },
   { href: "/stats", label: "Stats", icon: BarChart3 },

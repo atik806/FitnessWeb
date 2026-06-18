@@ -13,6 +13,7 @@ import {
   UserCircle,
   Menu,
   X,
+  BookOpen,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { ThemeToggle } from "@/components/theme-toggle"
@@ -20,6 +21,7 @@ import { ThemeToggle } from "@/components/theme-toggle"
 const navLinks = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/workouts", label: "Workouts", icon: Dumbbell },
+  { href: "/exercises", label: "Exercises", icon: BookOpen },
   { href: "/nutrition", label: "Nutrition", icon: Apple },
   { href: "/sleep", label: "Sleep", icon: Moon },
   { href: "/stats", label: "Stats", icon: BarChart3 },

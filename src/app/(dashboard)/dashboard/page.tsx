@@ -2,20 +2,27 @@
 
 import { useEffect, useState, useCallback } from "react"
 import { createClient } from "@/lib/supabase/client"
-import { useProfileStore, useWorkoutStore, useMealStore } from "@/store"
+import { useProfileStore, useWorkoutStore, useMealStore, useSleepStore } from "@/store"
+import { useAuthStore } from "@/hooks/use-auth"
 import { Greeting } from "@/components/dashboard/greeting"
 import { WalkRing } from "@/components/dashboard/step-ring"
 import { MetricCard } from "@/components/dashboard/metric-card"
 import { RecentWorkouts } from "@/components/dashboard/recent-workouts"
+import { DailyExercise } from "@/components/dashboard/daily-exercise"
+import { SleepSummary } from "@/components/dashboard/sleep-summary"
 import { Flame, Droplets, Timer, Loader2 } from "lucide-react"
 import { getToday } from "@/lib/utils"
 
 export default function DashboardPage() {
-  const [userId, setUserId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
-  const { profile, loadProfile } = useProfileStore()
-  const { workouts, loadWorkouts } = useWorkoutStore()
-  const { meals, loadMeals } = useMealStore()
+  const profile = useProfileStore((s) => s.profile)
+  const loadProfile = useProfileStore((s) => s.loadProfile)
+  const workouts = useWorkoutStore((s) => s.workouts)
+  const loadWorkouts = useWorkoutStore((s) => s.loadWorkouts)
+  const meals = useMealStore((s) => s.meals)
+  const loadMeals = useMealStore((s) => s.loadMeals)
+  const loadSleep = useSleepStore((s) => s.loadRecords)
+  const { userId, loading: authLoading, fetchUser } = useAuthStore()
   const [waterL, setWaterL] = useState(0)
   const today = getToday()
 
@@ -27,27 +34,27 @@ export default function DashboardPage() {
         .select("amount_l")
         .eq("user_id", uid)
         .eq("date", today)
-      if (data) setWaterL(data.reduce((s, w) => s + w.amount_l, 0))
+      if (data) setWaterL(data.reduce((s: number, w: { amount_l: number }) => s + w.amount_l, 0))
     } catch {}
   }, [today])
 
   useEffect(() => {
-    const supabase = createClient()
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
-        const id = session.user.id
-        setUserId(id)
-        Promise.all([
-          loadProfile(id),
-          loadWorkouts(id),
-          loadMeals(id, today),
-          loadWater(id),
-        ]).finally(() => setLoading(false))
-      } else {
-        setLoading(false)
-      }
-    }).catch(() => setLoading(false))
-  }, [loadProfile, loadWorkouts, loadMeals, loadWater, today])
+    fetchUser()
+  }, [fetchUser])
+
+  useEffect(() => {
+    if (!userId) {
+      if (!authLoading) setLoading(false)
+      return
+    }
+    Promise.all([
+      loadProfile(userId),
+      loadWorkouts(userId),
+      loadMeals(userId, today),
+      loadSleep(userId),
+      loadWater(userId),
+    ]).finally(() => setLoading(false))
+  }, [userId, authLoading, loadProfile, loadWorkouts, loadMeals, loadSleep, loadWater, today])
 
   const walkMin = workouts
     .filter((w) => w.type === "walking")
@@ -60,7 +67,7 @@ export default function DashboardPage() {
   const waterGoal = Math.max(profile?.water_goal_l ?? 2.5, 0.1)
   const activeGoal = Math.max(profile?.active_goal_min ?? 30, 1)
 
-  if (!userId || loading) {
+  if (loading || !userId) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <Loader2 className="size-6 animate-spin text-muted-foreground" />
@@ -102,6 +109,10 @@ export default function DashboardPage() {
           unit="min"
         />
       </div>
+
+      <DailyExercise />
+
+      <SleepSummary />
 
       <RecentWorkouts userId={userId} />
     </div>

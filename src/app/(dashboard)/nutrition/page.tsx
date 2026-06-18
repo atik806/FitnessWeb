@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { useMealStore, useProfileStore } from "@/store"
+import { useAuthStore } from "@/hooks/use-auth"
 import { MealForm } from "@/components/log/meal-form"
 import { WaterForm } from "@/components/log/water-form"
 import {
@@ -45,11 +46,16 @@ const mealTypeMeta: Record<string, { icon: typeof Apple; color: string; bg: stri
 const defaultMacros = { protein: 50, carbs: 300, fat: 65 }
 
 export default function NutritionPage() {
-  const [userId, setUserId] = useState<string | null>(null)
   const [mealOpen, setMealOpen] = useState(false)
   const [waterIntakes, setWaterIntakes] = useState<WaterIntake[]>([])
-  const { meals, loading: mealsLoading, loadMeals, deleteMeal } = useMealStore()
-  const { profile, loadProfile, saveProfile } = useProfileStore()
+  const meals = useMealStore((s) => s.meals)
+  const mealsLoading = useMealStore((s) => s.loading)
+  const loadMeals = useMealStore((s) => s.loadMeals)
+  const deleteMeal = useMealStore((s) => s.deleteMeal)
+  const profile = useProfileStore((s) => s.profile)
+  const loadProfile = useProfileStore((s) => s.loadProfile)
+  const saveProfile = useProfileStore((s) => s.saveProfile)
+  const { userId, loading: authLoading, fetchUser } = useAuthStore()
   const [editCal, setEditCal] = useState("")
   const [editProtein, setEditProtein] = useState("")
   const [editCarbs, setEditCarbs] = useState("")
@@ -73,17 +79,15 @@ export default function NutritionPage() {
   }, [today])
 
   useEffect(() => {
-    const supabase = createClient()
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
-        const id = session.user.id
-        setUserId(id)
-        loadProfile(id).catch(() => {})
-        loadMeals(id, today).catch(() => {})
-        loadWater(id).catch(() => {})
-      }
-    }).catch(() => {})
-  }, [loadProfile, loadMeals, loadWater, today])
+    fetchUser()
+  }, [fetchUser])
+
+  useEffect(() => {
+    if (!userId) return
+    loadProfile(userId).catch(() => {})
+    loadMeals(userId, today).catch(() => {})
+    loadWater(userId).catch(() => {})
+  }, [userId, loadProfile, loadMeals, loadWater, today])
 
   useEffect(() => {
     if (profile) {
@@ -161,7 +165,7 @@ export default function NutritionPage() {
     )
   }
 
-  if (!userId) {
+  if (authLoading || !userId) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="flex flex-col items-center gap-3">

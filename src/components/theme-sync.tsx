@@ -17,7 +17,7 @@ export function ThemeSync() {
         .select("theme")
         .eq("id", session.user.id)
         .maybeSingle()
-        .then(({ data }) => {
+        .then(({ data }: { data: { theme: string | null } | null }) => {
           if (data?.theme && data.theme !== "system") {
             setTheme(data.theme)
           }

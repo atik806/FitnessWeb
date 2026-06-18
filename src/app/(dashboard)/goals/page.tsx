@@ -23,6 +23,7 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
+import type { Session } from "@supabase/supabase-js"
 import type { UserGoal } from "@/types"
 
 const categoryConfig: Record<string, { label: string; color: string; bg: string }> = {
@@ -67,7 +68,7 @@ export default function GoalsPage() {
 
   useEffect(() => {
     const supabase = createClient()
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session } }: { data: { session: Session | null } }) => {
       if (session?.user) {
         const id = session.user.id
         setUserId(id)

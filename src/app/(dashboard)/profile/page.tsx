@@ -29,6 +29,7 @@ import {
   CalendarDays,
 } from "lucide-react"
 import { toast } from "sonner"
+import type { Session } from "@supabase/supabase-js"
 import { cn } from "@/lib/utils"
 
 const themes = [
@@ -68,7 +69,7 @@ export default function ProfilePage() {
 
   useEffect(() => {
     const supabase = createClient()
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session } }: { data: { session: Session | null } }) => {
       if (session?.user) {
         const id = session.user.id
         setUserId(id)
